@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Scissors, Calendar, Clock, ChevronDown } from "lucide-react";
+import { Calendar, Clock, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { StatusIndicator } from "@/components/StatusIndicator";
@@ -10,6 +10,9 @@ import { BookingModal } from "@/components/BookingModal";
 import { Navigation } from "@/components/Navigation";
 import { AdSlider } from "@/components/AdSlider";
 import { ContactSection } from "@/components/ContactSection";
+import { Logo } from "@/components/Logo";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 // Import images
 import heroImage from "@/assets/hero-barber.jpg";
@@ -33,6 +36,7 @@ const Index = () => {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [isBarberOnline] = useState(true);
+  const { user, signOut } = useAuth();
 
   const sectionsRef = {
     home: useRef<HTMLDivElement>(null),
@@ -53,28 +57,45 @@ const Index = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <div className="min-h-screen pb-24" dir="rtl">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-card rounded-none border-x-0 border-t-0">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <motion.div
-              initial={{ rotate: -45 }}
-              animate={{ rotate: 0 }}
-              className="w-10 h-10 rounded-full gold-gradient flex items-center justify-center"
-            >
-              <Scissors className="w-5 h-5 text-primary-foreground" />
-            </motion.div>
+            <Logo size="sm" showText={false} />
             <div>
               <h1 className="font-bold text-lg gold-text">حلاق صادق</h1>
               <p className="text-xs text-muted-foreground">Sadiq Barber</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <StatusIndicator isOnline={isBarberOnline} />
             <ThemeToggle />
+            
+            {user && (
+              <div className="flex items-center gap-2">
+                <Avatar className="w-8 h-8 border-2 border-gold">
+                  <AvatarImage src={user.user_metadata?.avatar_url} alt={user.user_metadata?.full_name} />
+                  <AvatarFallback className="bg-gold text-primary-foreground text-xs">
+                    {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSignOut}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -161,9 +182,6 @@ const Index = () => {
             className="flex items-center justify-between"
           >
             <h2 className="text-2xl font-bold gold-text">القصّات المتاحة</h2>
-            <div className="flex items-center gap-2">
-              <Scissors className="w-5 h-5 text-gold" />
-            </div>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
