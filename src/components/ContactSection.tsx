@@ -19,15 +19,15 @@ const contactLinks = [
   {
     icon: Instagram,
     label: "إنستغرام",
-    value: "@sadiq_barber",
-    href: "https://instagram.com/sadiq_barber",
+    value: "@rio_b9",
+    href: "https://www.instagram.com/rio_b9?igsh=cThieGNyaXRkNG0z",
     color: "from-pink-500 to-purple-600",
   },
   {
     icon: Facebook,
     label: "فيسبوك",
-    value: "Sadiq Barber",
-    href: "https://facebook.com/sadiqbarber",
+    value: "حلاق صادق",
+    href: "https://www.facebook.com/share/174VnW9waS/",
     color: "from-blue-600 to-blue-700",
   },
 ];
