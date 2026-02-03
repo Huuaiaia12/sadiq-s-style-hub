@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Calendar, Clock, ChevronDown, LogOut } from "lucide-react";
+import { Calendar, Clock, ChevronDown, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { StatusIndicator } from "@/components/StatusIndicator";
@@ -12,6 +13,7 @@ import { AdSlider } from "@/components/AdSlider";
 import { ContactSection } from "@/components/ContactSection";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 // Import images
@@ -33,10 +35,12 @@ const haircuts = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [isBarberOnline] = useState(true);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
 
   const sectionsRef = {
     home: useRef<HTMLDivElement>(null),
@@ -77,6 +81,17 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <StatusIndicator isOnline={isBarberOnline} />
             <ThemeToggle />
+            
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/admin")}
+                className="text-gold hover:text-gold/80"
+              >
+                <Shield className="w-5 h-5" />
+              </Button>
+            )}
             
             {user && (
               <div className="flex items-center gap-2">
