@@ -185,7 +185,7 @@ const Index = () => {
 
         {/* Points Section */}
         <section ref={sectionsRef.points}>
-          <PointsCard points={150} />
+          <PointsCard />
         </section>
 
         {/* Haircuts Gallery */}

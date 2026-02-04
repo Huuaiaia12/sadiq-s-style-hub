@@ -1,11 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, Scissors, Phone, MessageSquare, Check } from "lucide-react";
+import { X, Calendar, Clock, Scissors, MessageSquare, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface TimeSlot {
+  id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
 }
 
 const haircutTypes = [
@@ -17,57 +30,117 @@ const haircutTypes = [
   "تحديد اللحية فقط",
 ];
 
-const timeSlots = [
-  "10:00 ص",
-  "11:00 ص",
-  "12:00 م",
-  "2:00 م",
-  "3:00 م",
-  "4:00 م",
-  "5:00 م",
-  "6:00 م",
-  "7:00 م",
-  "8:00 م",
-];
-
 export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedType, setSelectedType] = useState("");
-  const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(true);
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  useEffect(() => {
+    if (isOpen) {
+      fetchTimeSlots();
+    }
+  }, [isOpen]);
+
+  const fetchTimeSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from("time_slots")
+        .select("*")
+        .eq("is_available", true)
+        .gte("date", today)
+        .order("date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      setTimeSlots(data || []);
+    } catch (error) {
+      console.error("Error fetching time slots:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في جلب المواعيد المتاحة",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !selectedSlot) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .insert({
+          user_id: user.id,
+          time_slot_id: selectedSlot.id,
+          service_type: selectedType,
+          notes: notes || null,
+          status: "pending",
+        });
+
+      if (error) throw error;
+      
+      setIsSubmitted(true);
+      toast({
+        title: "تم الإرسال",
+        description: "تم إرسال طلب الحجز بنجاح",
+      });
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إرسال طلب الحجز",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetAndClose = () => {
     setStep(1);
-    setSelectedDate("");
-    setSelectedTime("");
+    setSelectedSlot(null);
     setSelectedType("");
-    setPhone("");
     setNotes("");
     setIsSubmitted(false);
     onClose();
   };
 
-  const generateDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push({
-        day: date.toLocaleDateString("ar-SA", { weekday: "short" }),
-        date: date.getDate(),
-        full: date.toISOString().split("T")[0],
-      });
-    }
-    return dates;
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'م' : 'ص';
+    const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    return `${displayHour}:${minutes} ${ampm}`;
   };
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return format(date, "EEEE d MMMM", { locale: ar });
+  };
+
+  // Group slots by date
+  const slotsByDate = timeSlots.reduce((acc, slot) => {
+    if (!acc[slot.date]) {
+      acc[slot.date] = [];
+    }
+    acc[slot.date].push(slot);
+    return acc;
+  }, {} as Record<string, TimeSlot[]>);
 
   return (
     <AnimatePresence>
@@ -122,51 +195,53 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium mb-3">
                           <Calendar className="w-4 h-4 text-gold" />
-                          اختر التاريخ
+                          اختر الموعد المتاح
                         </label>
-                        <div className="grid grid-cols-7 gap-2">
-                          {generateDates().map((d) => (
-                            <button
-                              key={d.full}
-                              onClick={() => setSelectedDate(d.full)}
-                              className={`p-3 rounded-xl text-center transition-all ${
-                                selectedDate === d.full
-                                  ? "gold-gradient text-primary-foreground"
-                                  : "bg-secondary hover:bg-muted"
-                              }`}
-                            >
-                              <div className="text-xs mb-1">{d.day}</div>
-                              <div className="font-bold">{d.date}</div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium mb-3">
-                          <Clock className="w-4 h-4 text-gold" />
-                          اختر الوقت
-                        </label>
-                        <div className="grid grid-cols-5 gap-2">
-                          {timeSlots.map((time) => (
-                            <button
-                              key={time}
-                              onClick={() => setSelectedTime(time)}
-                              className={`p-2 rounded-lg text-sm transition-all ${
-                                selectedTime === time
-                                  ? "gold-gradient text-primary-foreground"
-                                  : "bg-secondary hover:bg-muted"
-                              }`}
-                            >
-                              {time}
-                            </button>
-                          ))}
-                        </div>
+                        
+                        {loadingSlots ? (
+                          <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 text-gold animate-spin" />
+                          </div>
+                        ) : Object.keys(slotsByDate).length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>لا توجد مواعيد متاحة حالياً</p>
+                            <p className="text-sm mt-2">يرجى التحقق لاحقاً</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {Object.entries(slotsByDate).map(([date, slots]) => (
+                              <div key={date} className="space-y-2">
+                                <h3 className="text-sm font-medium text-gold">
+                                  {formatDate(date)}
+                                </h3>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {slots.map((slot) => (
+                                    <button
+                                      key={slot.id}
+                                      onClick={() => setSelectedSlot(slot)}
+                                      className={`p-3 rounded-xl text-center transition-all ${
+                                        selectedSlot?.id === slot.id
+                                          ? "gold-gradient text-primary-foreground"
+                                          : "bg-secondary hover:bg-muted"
+                                      }`}
+                                    >
+                                      <Clock className="w-4 h-4 mx-auto mb-1" />
+                                      <div className="text-sm font-medium">
+                                        {formatTime(slot.start_time)}
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <Button
                         onClick={() => setStep(2)}
-                        disabled={!selectedDate || !selectedTime}
+                        disabled={!selectedSlot}
                         className="w-full gold-gradient text-primary-foreground font-bold py-6"
                       >
                         التالي
@@ -231,19 +306,21 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium mb-3">
-                          <Phone className="w-4 h-4 text-gold" />
-                          رقم الهاتف
-                        </label>
-                        <input
-                          type="tel"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="07xxxxxxxx"
-                          className="w-full p-4 rounded-xl bg-secondary border border-border focus:border-gold outline-none transition-colors"
-                          dir="ltr"
-                        />
+                      {/* Booking Summary */}
+                      <div className="glass-card p-4 space-y-3">
+                        <h3 className="font-medium gold-text">ملخص الحجز</h3>
+                        <div className="flex items-center gap-3 text-sm">
+                          <Calendar className="w-4 h-4 text-gold" />
+                          <span>{selectedSlot && formatDate(selectedSlot.date)}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <Clock className="w-4 h-4 text-gold" />
+                          <span>{selectedSlot && formatTime(selectedSlot.start_time)}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <Scissors className="w-4 h-4 text-gold" />
+                          <span>{selectedType}</span>
+                        </div>
                       </div>
 
                       <div>
@@ -264,15 +341,20 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                           variant="outline"
                           onClick={() => setStep(2)}
                           className="flex-1 py-6"
+                          disabled={isLoading}
                         >
                           السابق
                         </Button>
                         <Button
                           onClick={handleSubmit}
-                          disabled={!phone}
+                          disabled={isLoading}
                           className="flex-1 gold-gradient text-primary-foreground font-bold py-6"
                         >
-                          تأكيد الحجز
+                          {isLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            "تأكيد الحجز"
+                          )}
                         </Button>
                       </div>
                     </motion.div>
@@ -300,11 +382,11 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                 <div className="glass-card p-6 text-right space-y-3 mb-6">
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-gold" />
-                    <span>التاريخ: {selectedDate}</span>
+                    <span>التاريخ: {selectedSlot && formatDate(selectedSlot.date)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-gold" />
-                    <span>الوقت: {selectedTime}</span>
+                    <span>الوقت: {selectedSlot && formatTime(selectedSlot.start_time)}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Scissors className="w-5 h-5 text-gold" />

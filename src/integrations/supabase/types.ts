@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          points_awarded: number | null
+          service_type: string
+          status: string
+          time_slot_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_awarded?: number | null
+          service_type: string
+          status?: string
+          time_slot_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          points_awarded?: number | null
+          service_type?: string
+          status?: string
+          time_slot_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_time_slot_id_fkey"
+            columns: ["time_slot_id"]
+            isOneToOne: false
+            referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -21,6 +65,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          points: number | null
           updated_at: string
           user_id: string
         }
@@ -30,6 +75,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          points?: number | null
           updated_at?: string
           user_id: string
         }
@@ -39,8 +85,39 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          points?: number | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      time_slots: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
         }
         Relationships: []
       }
@@ -73,6 +150,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { p_points: number; p_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
