@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
  import { Switch } from "@/components/ui/switch";
+import { ProductsManager } from "@/components/admin/ProductsManager";
 
 interface UserWithRole {
   id: string;
@@ -585,9 +586,10 @@ const Admin = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="bookings" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
               <TabsTrigger value="slots">المواعيد</TabsTrigger>
+              <TabsTrigger value="products">المنتجات</TabsTrigger>
               <TabsTrigger value="users">المستخدمين</TabsTrigger>
             </TabsList>
 
@@ -756,6 +758,11 @@ const Admin = () => {
                   </Table>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Products Tab */}
+            <TabsContent value="products">
+              <ProductsManager />
             </TabsContent>
 
             {/* Users Tab */}
