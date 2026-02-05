@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      barber_status: {
+        Row: {
+          id: string
+          is_online: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          is_online?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          is_online?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           created_at: string

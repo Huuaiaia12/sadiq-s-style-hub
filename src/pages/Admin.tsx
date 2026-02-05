@@ -18,7 +18,8 @@ import {
   X,
   Gift,
   Star,
-  CalendarDays
+   CalendarDays,
+   Radio
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+ import { Switch } from "@/components/ui/switch";
 
 interface UserWithRole {
   id: string;
@@ -122,6 +124,10 @@ const Admin = () => {
     user: UserWithRole | null;
     points: number;
   }>({ open: false, user: null, points: 10 });
+ 
+   // Barber status
+   const [isBarberOnline, setIsBarberOnline] = useState(true);
+   const [statusLoading, setStatusLoading] = useState(false);
 
   useEffect(() => {
     if (!roleLoading && !isAdmin) {
@@ -132,6 +138,7 @@ const Admin = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchAllData();
+       fetchBarberStatus();
     }
   }, [isAdmin]);
 
@@ -140,6 +147,58 @@ const Admin = () => {
     await Promise.all([fetchUsers(), fetchTimeSlots(), fetchBookings()]);
     setLoading(false);
   };
+ 
+   const fetchBarberStatus = async () => {
+     try {
+       const { data, error } = await supabase
+         .from("barber_status")
+         .select("*")
+         .limit(1)
+         .single();
+ 
+       if (error) throw error;
+       if (data) {
+         setIsBarberOnline(data.is_online);
+       }
+     } catch (error) {
+       console.error("Error fetching barber status:", error);
+     }
+   };
+ 
+   const handleToggleStatus = async () => {
+     setStatusLoading(true);
+     try {
+       const { data: existing } = await supabase
+         .from("barber_status")
+         .select("id")
+         .limit(1)
+         .single();
+ 
+       if (existing) {
+         const { error } = await supabase
+           .from("barber_status")
+           .update({ 
+             is_online: !isBarberOnline, 
+             updated_at: new Date().toISOString(),
+             updated_by: user?.id 
+           })
+           .eq("id", existing.id);
+ 
+         if (error) throw error;
+       }
+ 
+       setIsBarberOnline(!isBarberOnline);
+       toast({ 
+         title: "تم", 
+         description: !isBarberOnline ? "أنت متواجد الآن" : "تم تغيير الحالة إلى غير متواجد" 
+       });
+     } catch (error) {
+       console.error("Error updating status:", error);
+       toast({ title: "خطأ", description: "فشل في تحديث الحالة", variant: "destructive" });
+     } finally {
+       setStatusLoading(false);
+     }
+   };
 
   const fetchUsers = async () => {
     try {
@@ -454,6 +513,19 @@ const Admin = () => {
               أدمن أساسي
             </Badge>
           )}
+           
+           {/* Barber Status Toggle */}
+           <div className="flex items-center gap-3 glass-card px-3 py-2 rounded-lg">
+             <Radio className={`w-4 h-4 ${isBarberOnline ? 'text-green-500' : 'text-muted-foreground'}`} />
+             <span className="text-sm font-medium">
+               {isBarberOnline ? "متواجد" : "غير متواجد"}
+             </span>
+             <Switch
+               checked={isBarberOnline}
+               onCheckedChange={handleToggleStatus}
+               disabled={statusLoading}
+             />
+           </div>
         </div>
       </header>
 

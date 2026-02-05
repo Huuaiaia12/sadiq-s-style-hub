@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Calendar, Clock, ChevronDown, LogOut, Shield } from "lucide-react";
@@ -15,6 +15,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 // Import images
 import heroImage from "@/assets/hero-barber.jpg";
@@ -38,9 +39,48 @@ const Index = () => {
   const navigate = useNavigate();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
-  const [isBarberOnline] = useState(true);
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
+  const [isBarberOnline, setIsBarberOnline] = useState(true);
+
+  // Fetch and subscribe to barber status
+  useEffect(() => {
+    const fetchStatus = async () => {
+      const { data } = await supabase
+        .from("barber_status")
+        .select("*")
+        .limit(1)
+        .single();
+      
+      if (data) {
+        setIsBarberOnline(data.is_online);
+      }
+    };
+
+    fetchStatus();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel("barber-status-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "barber_status",
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new.is_online === "boolean") {
+            setIsBarberOnline(payload.new.is_online);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const sectionsRef = {
     home: useRef<HTMLDivElement>(null),
