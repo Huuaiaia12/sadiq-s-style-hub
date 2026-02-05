@@ -12,6 +12,7 @@ import { Navigation } from "@/components/Navigation";
 import { AdSlider } from "@/components/AdSlider";
 import { ContactSection } from "@/components/ContactSection";
 import { Logo } from "@/components/Logo";
+import { ProductsSection } from "@/components/ProductsSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -251,6 +252,9 @@ const Index = () => {
             ))}
           </div>
         </section>
+
+        {/* Products Section */}
+        <ProductsSection />
 
         {/* Contact Section */}
         <section ref={sectionsRef.contact}>
