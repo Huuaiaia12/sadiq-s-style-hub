@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, Scissors, MessageSquare, Check, Loader2 } from "lucide-react";
+import { X, Calendar, Clock, MessageSquare, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,22 +21,12 @@ interface TimeSlot {
   is_available: boolean;
 }
 
-const haircutTypes = [
-  "Fade + Beard",
-  "Classic Cut",
-  "Skin Fade",
-  "Buzz Cut",
-  "Pompadour",
-  "تحديد اللحية فقط",
-];
-
 export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [selectedType, setSelectedType] = useState("");
   const [notes, setNotes] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +77,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
         .insert({
           user_id: user.id,
           time_slot_id: selectedSlot.id,
-          service_type: selectedType,
+          service_type: "حجز موعد",
           notes: notes || null,
           status: "pending",
         });
@@ -114,7 +104,6 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const resetAndClose = () => {
     setStep(1);
     setSelectedSlot(null);
-    setSelectedType("");
     setNotes("");
     setIsSubmitted(false);
     onClose();
@@ -173,7 +162,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
                 {/* Progress */}
                 <div className="flex items-center gap-2 mb-8">
-                  {[1, 2, 3].map((s) => (
+                  {[1, 2].map((s) => (
                     <div
                       key={s}
                       className={`flex-1 h-1 rounded-full transition-colors ${
@@ -257,55 +246,6 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
-                      <div>
-                        <label className="flex items-center gap-2 text-sm font-medium mb-3">
-                          <Scissors className="w-4 h-4 text-gold" />
-                          نوع القصّة
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {haircutTypes.map((type) => (
-                            <button
-                              key={type}
-                              onClick={() => setSelectedType(type)}
-                              className={`p-4 rounded-xl text-sm transition-all ${
-                                selectedType === type
-                                  ? "gold-gradient text-primary-foreground"
-                                  : "bg-secondary hover:bg-muted"
-                              }`}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <Button
-                          variant="outline"
-                          onClick={() => setStep(1)}
-                          className="flex-1 py-6"
-                        >
-                          السابق
-                        </Button>
-                        <Button
-                          onClick={() => setStep(3)}
-                          disabled={!selectedType}
-                          className="flex-1 gold-gradient text-primary-foreground font-bold py-6"
-                        >
-                          التالي
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {step === 3 && (
-                    <motion.div
-                      key="step3"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-6"
-                    >
                       {/* Booking Summary */}
                       <div className="glass-card p-4 space-y-3">
                         <h3 className="font-medium gold-text">ملخص الحجز</h3>
@@ -316,10 +256,6 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                         <div className="flex items-center gap-3 text-sm">
                           <Clock className="w-4 h-4 text-gold" />
                           <span>{selectedSlot && formatTime(selectedSlot.start_time)}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <Scissors className="w-4 h-4 text-gold" />
-                          <span>{selectedType}</span>
                         </div>
                       </div>
 
@@ -339,7 +275,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          onClick={() => setStep(2)}
+                          onClick={() => setStep(1)}
                           className="flex-1 py-6"
                           disabled={isLoading}
                         >
@@ -387,10 +323,6 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-gold" />
                     <span>الوقت: {selectedSlot && formatTime(selectedSlot.start_time)}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Scissors className="w-5 h-5 text-gold" />
-                    <span>نوع القصّة: {selectedType}</span>
                   </div>
                 </div>
 
