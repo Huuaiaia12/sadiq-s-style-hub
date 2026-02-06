@@ -57,6 +57,7 @@ import {
 import { cn } from "@/lib/utils";
  import { Switch } from "@/components/ui/switch";
 import { ProductsManager } from "@/components/admin/ProductsManager";
+import { OrdersManager } from "@/components/admin/OrdersManager";
 
 interface UserWithRole {
   id: string;
@@ -586,8 +587,9 @@ const Admin = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="bookings" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="bookings">الحجوزات</TabsTrigger>
+              <TabsTrigger value="orders">طلبات المنتجات</TabsTrigger>
               <TabsTrigger value="slots">المواعيد</TabsTrigger>
               <TabsTrigger value="products">المنتجات</TabsTrigger>
               <TabsTrigger value="users">المستخدمين</TabsTrigger>
@@ -758,6 +760,11 @@ const Admin = () => {
                   </Table>
                 </div>
               )}
+            </TabsContent>
+
+            {/* Orders Tab */}
+            <TabsContent value="orders">
+              <OrdersManager />
             </TabsContent>
 
             {/* Products Tab */}
