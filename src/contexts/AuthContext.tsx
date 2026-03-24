@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 interface AuthContextType {
   user: User | null;
@@ -31,52 +32,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
+    // THEN check for existing session
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      })
+      .catch((error) => {
+        console.error("Error fetching session:", error);
+        setSession(null);
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+
     return () => subscription.unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    try {
-      // Dynamic import to handle the auto-generated lovable module
-      const { lovable } = await import("@/integrations/lovable");
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: redirectUrl,
-      });
+    const { error } = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
 
-      if (result.error) {
-        return { error: result.error as Error };
-      }
-
-      return { error: null };
-    } catch (e) {
-      // Fallback to direct Supabase OAuth if lovable module fails
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error: supabaseError } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: redirectUrl,
-        },
-      });
-
-      return { error: supabaseError as Error | null };
-    }
+    return { error: (error as Error | null) ?? null };
   };
 
   const signOut = async () => {
