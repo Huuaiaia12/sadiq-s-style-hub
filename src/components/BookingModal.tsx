@@ -154,14 +154,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     return format(date, "EEEE d MMMM", { locale: ar });
   };
 
-  // Group slots by date
-  const slotsByDate = timeSlots.reduce((acc, slot) => {
-    if (!acc[slot.date]) {
-      acc[slot.date] = [];
-    }
-    acc[slot.date].push(slot);
-    return acc;
-  }, {} as Record<string, TimeSlot[]>);
+
 
   return (
     <AnimatePresence>
