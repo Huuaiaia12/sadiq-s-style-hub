@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, MessageSquare, Check, Loader2 } from "lucide-react";
+import { X, Calendar as CalendarIcon, Clock, MessageSquare, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -33,29 +34,54 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchTimeSlots();
+      fetchAvailableDates();
     }
   }, [isOpen]);
 
-  const fetchTimeSlots = async () => {
-    setLoadingSlots(true);
+  useEffect(() => {
+    if (selectedDate) {
+      fetchTimeSlots(selectedDate);
+    }
+  }, [selectedDate]);
+
+  const fetchAvailableDates = async () => {
     try {
-      // Use local date to avoid timezone issues
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
       const today = `${year}-${month}-${day}`;
+
+      const { data, error } = await supabase
+        .from("time_slots")
+        .select("date")
+        .eq("is_available", true)
+        .gte("date", today)
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+      const uniqueDates = [...new Set((data || []).map(d => d.date))];
+      setAvailableDates(uniqueDates);
+    } catch (error) {
+      console.error("Error fetching available dates:", error);
+    }
+  };
+
+  const fetchTimeSlots = async (date: Date) => {
+    setLoadingSlots(true);
+    try {
+      const dateStr = format(date, "yyyy-MM-dd");
       
       const { data, error } = await supabase
         .from("time_slots")
         .select("*")
         .eq("is_available", true)
-        .gte("date", today)
-        .order("date", { ascending: true })
+        .eq("date", dateStr)
         .order("start_time", { ascending: true });
 
       if (error) throw error;
@@ -108,6 +134,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   const resetAndClose = () => {
     setStep(1);
+    setSelectedDate(undefined);
     setSelectedSlot(null);
     setNotes("");
     setIsSubmitted(false);
@@ -127,14 +154,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     return format(date, "EEEE d MMMM", { locale: ar });
   };
 
-  // Group slots by date
-  const slotsByDate = timeSlots.reduce((acc, slot) => {
-    if (!acc[slot.date]) {
-      acc[slot.date] = [];
-    }
-    acc[slot.date].push(slot);
-    return acc;
-  }, {} as Record<string, TimeSlot[]>);
+
 
   return (
     <AnimatePresence>
@@ -167,7 +187,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
                 {/* Progress */}
                 <div className="flex items-center gap-2 mb-8">
-                  {[1, 2].map((s) => (
+                  {[1, 2, 3].map((s) => (
                     <div
                       key={s}
                       className={`flex-1 h-1 rounded-full transition-colors ${
@@ -188,54 +208,31 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                     >
                       <div>
                         <label className="flex items-center gap-2 text-sm font-medium mb-3">
-                          <Calendar className="w-4 h-4 text-gold" />
-                          اختر الموعد المتاح
+                          <CalendarIcon className="w-4 h-4 text-gold" />
+                          اختر اليوم
                         </label>
                         
-                        {loadingSlots ? (
-                          <div className="flex items-center justify-center py-12">
-                            <Loader2 className="w-8 h-8 text-gold animate-spin" />
-                          </div>
-                        ) : Object.keys(slotsByDate).length === 0 ? (
-                          <div className="text-center py-12 text-muted-foreground">
-                            <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p>لا توجد مواعيد متاحة حالياً</p>
-                            <p className="text-sm mt-2">يرجى التحقق لاحقاً</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {Object.entries(slotsByDate).map(([date, slots]) => (
-                              <div key={date} className="space-y-2">
-                                <h3 className="text-sm font-medium text-gold">
-                                  {formatDate(date)}
-                                </h3>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {slots.map((slot) => (
-                                    <button
-                                      key={slot.id}
-                                      onClick={() => setSelectedSlot(slot)}
-                                      className={`p-3 rounded-xl text-center transition-all ${
-                                        selectedSlot?.id === slot.id
-                                          ? "gold-gradient text-primary-foreground"
-                                          : "bg-secondary hover:bg-muted"
-                                      }`}
-                                    >
-                                      <Clock className="w-4 h-4 mx-auto mb-1" />
-                                      <div className="text-sm font-medium">
-                                        {formatTime(slot.start_time)}
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex justify-center">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlot(null);
+                            }}
+                            disabled={(date) => {
+                              const dateStr = format(date, "yyyy-MM-dd");
+                              return !availableDates.includes(dateStr);
+                            }}
+                            locale={ar}
+                            className="p-3 pointer-events-auto rounded-xl bg-secondary"
+                          />
+                        </div>
                       </div>
 
                       <Button
                         onClick={() => setStep(2)}
-                        disabled={!selectedSlot}
+                        disabled={!selectedDate}
                         className="w-full gold-gradient text-primary-foreground font-bold py-6"
                       >
                         التالي
@@ -251,11 +248,75 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       exit={{ opacity: 0, x: -20 }}
                       className="space-y-6"
                     >
+                      <div>
+                        <label className="flex items-center gap-2 text-sm font-medium mb-3">
+                          <Clock className="w-4 h-4 text-gold" />
+                          اختر الوقت - {selectedDate && formatDate(format(selectedDate, "yyyy-MM-dd"))}
+                        </label>
+                        
+                        {loadingSlots ? (
+                          <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 text-gold animate-spin" />
+                          </div>
+                        ) : timeSlots.length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p>لا توجد مواعيد متاحة في هذا اليوم</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
+                            {timeSlots.map((slot) => (
+                              <button
+                                key={slot.id}
+                                onClick={() => setSelectedSlot(slot)}
+                                className={`p-3 rounded-xl text-center transition-all ${
+                                  selectedSlot?.id === slot.id
+                                    ? "gold-gradient text-primary-foreground"
+                                    : "bg-secondary hover:bg-muted"
+                                }`}
+                              >
+                                <Clock className="w-4 h-4 mx-auto mb-1" />
+                                <div className="text-sm font-medium">
+                                  {formatTime(slot.start_time)}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                          className="flex-1 py-6"
+                        >
+                          السابق
+                        </Button>
+                        <Button
+                          onClick={() => setStep(3)}
+                          disabled={!selectedSlot}
+                          className="flex-1 gold-gradient text-primary-foreground font-bold py-6"
+                        >
+                          التالي
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {step === 3 && (
+                    <motion.div
+                      key="step3"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
                       {/* Booking Summary */}
                       <div className="glass-card p-4 space-y-3">
                         <h3 className="font-medium gold-text">ملخص الحجز</h3>
                         <div className="flex items-center gap-3 text-sm">
-                          <Calendar className="w-4 h-4 text-gold" />
+                          <CalendarIcon className="w-4 h-4 text-gold" />
                           <span>{selectedSlot && formatDate(selectedSlot.date)}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
@@ -280,7 +341,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
-                          onClick={() => setStep(1)}
+                          onClick={() => setStep(2)}
                           className="flex-1 py-6"
                           disabled={isLoading}
                         >
@@ -322,7 +383,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
                 <div className="glass-card p-6 text-right space-y-3 mb-6">
                   <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-gold" />
+                    <CalendarIcon className="w-5 h-5 text-gold" />
                     <span>التاريخ: {selectedSlot && formatDate(selectedSlot.date)}</span>
                   </div>
                   <div className="flex items-center gap-3">
