@@ -75,19 +75,13 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   const fetchTimeSlots = async () => {
     setLoadingSlots(true);
     try {
-      // Use local date to avoid timezone issues
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, "0");
-      const day = String(now.getDate()).padStart(2, "0");
-      const today = `${year}-${month}-${day}`;
+      const dateStr = format(date, "yyyy-MM-dd");
       
       const { data, error } = await supabase
         .from("time_slots")
         .select("*")
         .eq("is_available", true)
-        .gte("date", today)
-        .order("date", { ascending: true })
+        .eq("date", dateStr)
         .order("start_time", { ascending: true });
 
       if (error) throw error;
