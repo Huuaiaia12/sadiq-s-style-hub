@@ -134,6 +134,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
 
   const resetAndClose = () => {
     setStep(1);
+    setSelectedDate(undefined);
     setSelectedSlot(null);
     setNotes("");
     setIsSubmitted(false);
