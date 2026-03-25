@@ -33,12 +33,43 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
   
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      fetchTimeSlots();
+      fetchAvailableDates();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchTimeSlots(selectedDate);
+    }
+  }, [selectedDate]);
+
+  const fetchAvailableDates = async () => {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const today = `${year}-${month}-${day}`;
+
+      const { data, error } = await supabase
+        .from("time_slots")
+        .select("date")
+        .eq("is_available", true)
+        .gte("date", today)
+        .order("date", { ascending: true });
+
+      if (error) throw error;
+      const uniqueDates = [...new Set((data || []).map(d => d.date))];
+      setAvailableDates(uniqueDates);
+    } catch (error) {
+      console.error("Error fetching available dates:", error);
+    }
+  };
 
   const fetchTimeSlots = async () => {
     setLoadingSlots(true);
