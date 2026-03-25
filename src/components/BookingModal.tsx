@@ -72,7 +72,7 @@ export const BookingModal = ({ isOpen, onClose }: BookingModalProps) => {
     }
   };
 
-  const fetchTimeSlots = async () => {
+  const fetchTimeSlots = async (date: Date) => {
     setLoadingSlots(true);
     try {
       const dateStr = format(date, "yyyy-MM-dd");
