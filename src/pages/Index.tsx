@@ -121,6 +121,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell />
             <StatusIndicator isOnline={isBarberOnline} />
             <ThemeToggle />
             
