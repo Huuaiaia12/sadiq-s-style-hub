@@ -12,6 +12,7 @@ import { Navigation } from "@/components/Navigation";
 import { AdSlider } from "@/components/AdSlider";
 import { ContactSection } from "@/components/ContactSection";
 import { Logo } from "@/components/Logo";
+import { NotificationBell } from "@/components/NotificationBell";
 import { ProductsSection } from "@/components/ProductsSection";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
