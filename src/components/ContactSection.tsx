@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Phone, MessageCircle, Instagram, Facebook, MapPin } from "lucide-react";
+import { Phone, MessageCircle, Instagram, Facebook } from "lucide-react";
 
 const contactLinks = [
   {
