@@ -160,54 +160,101 @@ const Index = () => {
 
       {/* Hero Section */}
       <section ref={sectionsRef.home} className="pt-20">
-        <div className="relative h-[60vh] min-h-[400px] overflow-hidden">
+        <div className="relative h-[70vh] min-h-[450px] overflow-hidden">
           <motion.img
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.5 }}
+            initial={{ scale: 1.2, filter: "brightness(0.3)" }}
+            animate={{ scale: 1, filter: "brightness(0.6)" }}
+            transition={{ duration: 2, ease: "easeOut" }}
             src={heroImage}
             alt="Sadiq Barber"
             className="absolute inset-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
           
-          <div className="absolute bottom-0 left-0 right-0 p-6">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="container mx-auto text-center"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-4">
-                <span className="gold-text">أهلاً بك في</span>
-                <br />
-                متجر عجلة الحض
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                تجربة حلاقة فاخرة مع أحدث القصّات والتصاميم العصرية
-              </p>
+          {/* Animated gold particles */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 rounded-full bg-gold/40"
+                initial={{ 
+                  x: `${20 + i * 15}%`, 
+                  y: "100%", 
+                  opacity: 0 
+                }}
+                animate={{ 
+                  y: "-10%", 
+                  opacity: [0, 0.8, 0],
+                }}
+                transition={{ 
+                  duration: 4 + i * 0.5, 
+                  repeat: Infinity, 
+                  delay: i * 0.8,
+                  ease: "easeOut"
+                }}
+              />
+            ))}
+          </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="absolute bottom-0 left-0 right-0 p-6">
+            <div className="container mx-auto text-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+              >
+                <Logo size="lg" showText={false} />
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="text-4xl md:text-5xl font-black mb-2 mt-4"
+              >
+                <span className="gold-text">حلاق صادق</span>
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, duration: 0.6 }}
+                className="text-sm text-muted-foreground mb-8 tracking-widest uppercase"
+              >
+                Sadiq Barber
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+                className="flex flex-col items-center gap-4"
+              >
                 <Button
                   onClick={() => setIsBookingOpen(true)}
-                  className="gold-gradient text-primary-foreground font-bold py-6 px-8 text-lg glow-gold animate-pulse-gold"
+                  className="gold-gradient text-primary-foreground font-bold py-6 px-10 text-lg glow-gold animate-pulse-gold rounded-full"
                 >
                   <Calendar className="w-5 h-5 ml-2" />
                   احجز الآن
                 </Button>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.2 }}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
                   <Clock className="w-4 h-4" />
                   <span>أقرب موعد: اليوم 6:00 م</span>
-                </div>
-              </div>
-            </motion.div>
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
+            transition={{ delay: 1.5 }}
             className="absolute bottom-4 left-1/2 -translate-x-1/2"
           >
             <ChevronDown className="w-6 h-6 text-gold animate-bounce" />
