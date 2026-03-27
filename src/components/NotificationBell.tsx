@@ -169,6 +169,16 @@ export const NotificationBell = () => {
                   ))
                 )}
               </ScrollArea>
+              <div className="p-2 border-t border-border">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => { setIsOpen(false); navigate("/notifications"); }}
+                >
+                  عرض جميع التبليغات
+                </Button>
+              </div>
             </motion.div>
           </>
         )}
