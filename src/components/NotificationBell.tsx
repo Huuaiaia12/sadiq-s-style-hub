@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNavigate } from "react-router-dom";
 
 interface Notification {
   id: string;
@@ -17,6 +18,7 @@ interface Notification {
 
 export const NotificationBell = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -167,6 +169,16 @@ export const NotificationBell = () => {
                   ))
                 )}
               </ScrollArea>
+              <div className="p-2 border-t border-border">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => { setIsOpen(false); navigate("/notifications"); }}
+                >
+                  عرض جميع التبليغات
+                </Button>
+              </div>
             </motion.div>
           </>
         )}
