@@ -281,8 +281,8 @@ const Index = () => {
         {/* Haircuts Gallery */}
         <section ref={sectionsRef.haircuts} className="space-y-6">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="flex items-center justify-between"
           >
@@ -291,13 +291,20 @@ const Index = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {haircuts.map((haircut, index) => (
-              <HaircutCard
+              <motion.div
                 key={haircut.name}
-                name={haircut.name}
-                image={haircut.image}
-                category={haircut.category}
-                index={index}
-              />
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, type: "spring", stiffness: 120 }}
+              >
+                <HaircutCard
+                  name={haircut.name}
+                  image={haircut.image}
+                  category={haircut.category}
+                  index={index}
+                />
+              </motion.div>
             ))}
           </div>
         </section>
