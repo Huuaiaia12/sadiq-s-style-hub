@@ -18,6 +18,7 @@ interface Notification {
 
 export const NotificationBell = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const unreadCount = notifications.filter((n) => !n.is_read).length;
