@@ -293,6 +293,7 @@ const Auth = () => {
                 type="button"
                 onClick={() => {
                   setIsEmailMode(false);
+                  setIsForgotPassword(false);
                   setError(null);
                   setSuccessMsg(null);
                 }}
