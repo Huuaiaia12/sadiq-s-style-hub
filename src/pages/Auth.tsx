@@ -214,19 +214,21 @@ const Auth = () => {
                 />
               </div>
 
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="كلمة المرور"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground"
-                  dir="ltr"
-                />
-              </div>
+              {!isForgotPassword && (
+                <div className="relative">
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    placeholder="كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground"
+                    dir="ltr"
+                  />
+                </div>
+              )}
 
-              {isSignUp && (
+              {isSignUp && !isForgotPassword && (
                 <div className="relative">
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -252,22 +254,40 @@ const Auth = () => {
                 )}
                 {isSigningIn
                   ? "جاري المعالجة..."
+                  : isForgotPassword
+                  ? "إرسال رابط إعادة التعيين"
                   : isSignUp
                   ? "إنشاء الحساب"
                   : "تسجيل الدخول"}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                  setSuccessMsg(null);
-                }}
-                className="w-full text-center text-sm text-primary hover:underline"
-              >
-                {isSignUp ? "لديك حساب بالفعل؟ سجل دخولك" : "ليس لديك حساب؟ أنشئ حساباً جديداً"}
-              </button>
+              {!isForgotPassword && !isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(true);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-primary"
+                >
+                  نسيت كلمة المرور؟
+                </button>
+              )}
+
+              {!isForgotPassword && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="w-full text-center text-sm text-primary hover:underline"
+                >
+                  {isSignUp ? "لديك حساب بالفعل؟ سجل دخولك" : "ليس لديك حساب؟ أنشئ حساباً جديداً"}
+                </button>
+              )}
 
               <button
                 type="button"
