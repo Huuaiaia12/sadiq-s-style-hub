@@ -10,12 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, loading, signInWithGoogle, signUpWithEmail, signInWithEmail } = useAuth();
+  const { user, loading, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isEmailMode, setIsEmailMode] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -43,6 +44,22 @@ const Auth = () => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+
+    if (isForgotPassword) {
+      if (!email) {
+        setError("يرجى إدخال البريد الإلكتروني");
+        return;
+      }
+      setIsSigningIn(true);
+      const { error } = await resetPassword(email);
+      if (error) {
+        setError(error.message || "حدث خطأ أثناء إرسال رابط إعادة التعيين");
+      } else {
+        setSuccessMsg("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني");
+      }
+      setIsSigningIn(false);
+      return;
+    }
 
     if (!email || !password) {
       setError("يرجى إدخال البريد الإلكتروني وكلمة المرور");
@@ -120,11 +137,13 @@ const Auth = () => {
         >
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2">
-              {isEmailMode ? (isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول") : "مرحباً بك"}
+              {isEmailMode ? (isForgotPassword ? "نسيت كلمة المرور" : isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول") : "مرحباً بك"}
             </h2>
             <p className="text-muted-foreground">
               {isEmailMode
-                ? isSignUp
+                ? isForgotPassword
+                  ? "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور"
+                  : isSignUp
                   ? "أنشئ حسابك باستخدام البريد الإلكتروني"
                   : "سجل دخولك باستخدام البريد الإلكتروني"
                 : "سجل دخولك للاستمتاع بخدماتنا المميزة"}
@@ -195,19 +214,21 @@ const Auth = () => {
                 />
               </div>
 
-              <div className="relative">
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="password"
-                  placeholder="كلمة المرور"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground"
-                  dir="ltr"
-                />
-              </div>
+              {!isForgotPassword && (
+                <div className="relative">
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    placeholder="كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground"
+                    dir="ltr"
+                  />
+                </div>
+              )}
 
-              {isSignUp && (
+              {isSignUp && !isForgotPassword && (
                 <div className="relative">
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -233,27 +254,46 @@ const Auth = () => {
                 )}
                 {isSigningIn
                   ? "جاري المعالجة..."
+                  : isForgotPassword
+                  ? "إرسال رابط إعادة التعيين"
                   : isSignUp
                   ? "إنشاء الحساب"
                   : "تسجيل الدخول"}
               </Button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                  setSuccessMsg(null);
-                }}
-                className="w-full text-center text-sm text-primary hover:underline"
-              >
-                {isSignUp ? "لديك حساب بالفعل؟ سجل دخولك" : "ليس لديك حساب؟ أنشئ حساباً جديداً"}
-              </button>
+              {!isForgotPassword && !isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(true);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-primary"
+                >
+                  نسيت كلمة المرور؟
+                </button>
+              )}
+
+              {!isForgotPassword && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError(null);
+                    setSuccessMsg(null);
+                  }}
+                  className="w-full text-center text-sm text-primary hover:underline"
+                >
+                  {isSignUp ? "لديك حساب بالفعل؟ سجل دخولك" : "ليس لديك حساب؟ أنشئ حساباً جديداً"}
+                </button>
+              )}
 
               <button
                 type="button"
                 onClick={() => {
                   setIsEmailMode(false);
+                  setIsForgotPassword(false);
                   setError(null);
                   setSuccessMsg(null);
                 }}
