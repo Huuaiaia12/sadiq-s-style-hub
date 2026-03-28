@@ -12,7 +12,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, loading, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isEmailMode, setIsEmailMode] = useState(false);
