@@ -105,18 +105,34 @@ const Auth = () => {
               {isForgotPassword ? "نسيت كلمة المرور" : isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول"}
             </h2>
             <p className="text-muted-foreground">
-              {isForgotPassword ? "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور" : isSignUp ? "أنشئ حسابك باستخدام البريد الإلكتروني" : "سجل دخولك باستخدام البريد الإلكتروني"}
+              {isForgotPassword ? "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور" : isSignUp ? "أنشئ حسابك الآن" : "سجل دخولك"}
             </p>
           </div>
 
           {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
           {successMsg && <Alert className="border-primary/50 bg-primary/10"><AlertDescription className="text-primary">{successMsg}</AlertDescription></Alert>}
 
+          {!isForgotPassword && (
+            <Tabs value={authMethod} onValueChange={(v) => { setAuthMethod(v as "email" | "phone"); setError(null); }} className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="email" className="gap-2"><Mail className="w-4 h-4" /> بريد إلكتروني</TabsTrigger>
+                <TabsTrigger value="phone" className="gap-2"><Phone className="w-4 h-4" /> رقم الهاتف</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
-            </div>
+            {authMethod === "email" || isForgotPassword ? (
+              <div className="relative">
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
+              </div>
+            ) : (
+              <div className="relative">
+                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="tel" placeholder="07xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
+              </div>
+            )}
 
             {!isForgotPassword && (
               <div className="relative">
