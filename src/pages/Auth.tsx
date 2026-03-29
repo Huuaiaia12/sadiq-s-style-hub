@@ -1,22 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+const formatPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("07") && digits.length === 11) return "+964" + digits.slice(1);
+  if (digits.startsWith("964")) return "+" + digits;
+  if (phone.startsWith("+")) return phone;
+  return "+" + digits;
+};
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, loading, signUpWithEmail, signInWithEmail, resetPassword } = useAuth();
+  const { user, loading, signUpWithEmail, signInWithEmail, signUpWithPhone, signInWithPhone, resetPassword } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
