@@ -1,22 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+const formatPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("07") && digits.length === 11) return "+964" + digits.slice(1);
+  if (digits.startsWith("964")) return "+" + digits;
+  if (phone.startsWith("+")) return phone;
+  return "+" + digits;
+};
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, loading, signUpWithEmail, signInWithEmail, resetPassword } = useAuth();
+  const { user, loading, signUpWithEmail, signInWithEmail, signUpWithPhone, signInWithPhone, resetPassword } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -41,7 +52,9 @@ const Auth = () => {
       return;
     }
 
-    if (!email || !password) { setError("يرجى إدخال البريد الإلكتروني وكلمة المرور"); return; }
+    if (authMethod === "email" && !email) { setError("يرجى إدخال البريد الإلكتروني"); return; }
+    if (authMethod === "phone" && !phone) { setError("يرجى إدخال رقم الهاتف"); return; }
+    if (!password) { setError("يرجى إدخال كلمة المرور"); return; }
 
     if (isSignUp) {
       if (password.length < 6) { setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل"); return; }
@@ -49,13 +62,19 @@ const Auth = () => {
     }
 
     setIsSigningIn(true);
-    if (isSignUp) {
-      const { error } = await signUpWithEmail(email, password);
-      if (error) setError(error.message || "حدث خطأ أثناء إنشاء الحساب");
-      else setSuccessMsg("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
+    let result: { error: Error | null };
+
+    if (authMethod === "email") {
+      result = isSignUp ? await signUpWithEmail(email, password) : await signInWithEmail(email, password);
     } else {
-      const { error } = await signInWithEmail(email, password);
-      if (error) setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      const formatted = formatPhone(phone);
+      result = isSignUp ? await signUpWithPhone(formatted, password) : await signInWithPhone(formatted, password);
+    }
+
+    if (result.error) {
+      setError(isSignUp ? (result.error.message || "حدث خطأ أثناء إنشاء الحساب") : "البيانات غير صحيحة");
+    } else if (isSignUp) {
+      setSuccessMsg("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
     }
     setIsSigningIn(false);
   };
@@ -86,18 +105,34 @@ const Auth = () => {
               {isForgotPassword ? "نسيت كلمة المرور" : isSignUp ? "إنشاء حساب جديد" : "تسجيل الدخول"}
             </h2>
             <p className="text-muted-foreground">
-              {isForgotPassword ? "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور" : isSignUp ? "أنشئ حسابك باستخدام البريد الإلكتروني" : "سجل دخولك باستخدام البريد الإلكتروني"}
+              {isForgotPassword ? "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور" : isSignUp ? "أنشئ حسابك الآن" : "سجل دخولك"}
             </p>
           </div>
 
           {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
           {successMsg && <Alert className="border-primary/50 bg-primary/10"><AlertDescription className="text-primary">{successMsg}</AlertDescription></Alert>}
 
+          {!isForgotPassword && (
+            <Tabs value={authMethod} onValueChange={(v) => { setAuthMethod(v as "email" | "phone"); setError(null); }} className="w-full">
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="email" className="gap-2"><Mail className="w-4 h-4" /> بريد إلكتروني</TabsTrigger>
+                <TabsTrigger value="phone" className="gap-2"><Phone className="w-4 h-4" /> رقم الهاتف</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
-            </div>
+            {authMethod === "email" || isForgotPassword ? (
+              <div className="relative">
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="email" placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
+              </div>
+            ) : (
+              <div className="relative">
+                <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input type="tel" placeholder="07xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="pr-10 py-6 bg-secondary border-muted text-foreground placeholder:text-muted-foreground" dir="ltr" />
+              </div>
+            )}
 
             {!isForgotPassword && (
               <div className="relative">
