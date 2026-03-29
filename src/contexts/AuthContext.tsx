@@ -1,15 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
-  signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUpWithPhone: (phone: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithPhone: (phone: string, password: string) => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -35,7 +33,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -44,7 +41,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
     });
 
-    // THEN check for existing session
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => {
@@ -63,25 +59,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-
-    return { error: (error as Error | null) ?? null };
-  };
-
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithPhone = async (phone: string, password: string) => {
     const { error } = await supabase.auth.signUp({
-      email,
+      phone,
       password,
-      options: { emailRedirectTo: window.location.origin },
     });
     return { error: error as Error | null };
   };
 
-  const signInWithEmail = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const signInWithPhone = async (phone: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      phone,
+      password,
+    });
     return { error: error as Error | null };
   };
 
@@ -102,7 +92,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signUpWithEmail, signInWithEmail, resetPassword, updatePassword, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUpWithPhone, signInWithPhone, resetPassword, updatePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );
