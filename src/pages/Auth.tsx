@@ -52,7 +52,9 @@ const Auth = () => {
       return;
     }
 
-    if (!email || !password) { setError("يرجى إدخال البريد الإلكتروني وكلمة المرور"); return; }
+    if (authMethod === "email" && !email) { setError("يرجى إدخال البريد الإلكتروني"); return; }
+    if (authMethod === "phone" && !phone) { setError("يرجى إدخال رقم الهاتف"); return; }
+    if (!password) { setError("يرجى إدخال كلمة المرور"); return; }
 
     if (isSignUp) {
       if (password.length < 6) { setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل"); return; }
@@ -60,13 +62,19 @@ const Auth = () => {
     }
 
     setIsSigningIn(true);
-    if (isSignUp) {
-      const { error } = await signUpWithEmail(email, password);
-      if (error) setError(error.message || "حدث خطأ أثناء إنشاء الحساب");
-      else setSuccessMsg("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
+    let result: { error: Error | null };
+
+    if (authMethod === "email") {
+      result = isSignUp ? await signUpWithEmail(email, password) : await signInWithEmail(email, password);
     } else {
-      const { error } = await signInWithEmail(email, password);
-      if (error) setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
+      const formatted = formatPhone(phone);
+      result = isSignUp ? await signUpWithPhone(formatted, password) : await signInWithPhone(formatted, password);
+    }
+
+    if (result.error) {
+      setError(isSignUp ? (result.error.message || "حدث خطأ أثناء إنشاء الحساب") : "البيانات غير صحيحة");
+    } else if (isSignUp) {
+      setSuccessMsg("تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن.");
     }
     setIsSigningIn(false);
   };
